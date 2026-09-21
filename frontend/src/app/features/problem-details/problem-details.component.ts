@@ -2,6 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProblemService } from '../../core/services/problem.service';
+import { BookmarkService } from '../../core/services/bookmark.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Problem } from '../../shared/models/problem.model';
 
 @Component({
@@ -155,7 +157,10 @@ import { Problem } from '../../shared/models/problem.model';
 })
 export class ProblemDetailsComponent implements OnInit {
   private readonly problemService = inject(ProblemService);
+  private readonly bookmarkService = inject(BookmarkService);
+  readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   problem: Problem | null = null;
   loading = true;
@@ -180,6 +185,7 @@ export class ProblemDetailsComponent implements OnInit {
       next: (data) => {
         this.problem = data;
         this.loading = false;
+        this.checkBookmarkStatus(id);
       },
       error: (err) => {
         this.error = err.error?.message || 'Problem statement not found.';
@@ -188,9 +194,40 @@ export class ProblemDetailsComponent implements OnInit {
     });
   }
 
+  private checkBookmarkStatus(problemId: number): void {
+    if (this.authService.isLoggedIn()) {
+      this.bookmarkService.getUserBookmarks().subscribe({
+        next: (bookmarks) => {
+          if (this.problem) {
+            this.problem.bookmarked = bookmarks.some(b => b.id === problemId);
+          }
+        }
+      });
+    }
+  }
+
   toggleBookmark(): void {
-    if (this.problem) {
-      this.problem.bookmarked = !this.problem.bookmarked;
+    if (!this.problem) return;
+
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/auth/login'], {
+        queryParams: { returnUrl: `/problems/${this.problem.id}` }
+      });
+      return;
+    }
+
+    if (this.problem.bookmarked) {
+      this.bookmarkService.removeBookmark(this.problem.id).subscribe({
+        next: () => {
+          if (this.problem) this.problem.bookmarked = false;
+        }
+      });
+    } else {
+      this.bookmarkService.addBookmark(this.problem.id).subscribe({
+        next: () => {
+          if (this.problem) this.problem.bookmarked = true;
+        }
+      });
     }
   }
 

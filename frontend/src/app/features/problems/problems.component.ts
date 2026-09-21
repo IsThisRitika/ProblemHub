@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProblemService } from '../../core/services/problem.service';
+import { BookmarkService } from '../../core/services/bookmark.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Problem, ProblemFilterParams, Tag, Technology } from '../../shared/models/problem.model';
 import { ProblemCardComponent } from '../../shared/components/problem-card.component';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
@@ -215,12 +217,15 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 })
 export class ProblemsComponent implements OnInit {
   private readonly problemService = inject(ProblemService);
+  private readonly bookmarkService = inject(BookmarkService);
+  readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   problems: Problem[] = [];
   technologies: Technology[] = [];
   tags: Tag[] = [];
+  bookmarkedIds = new Set<number>();
 
   domains = [
     'Healthcare',
@@ -273,7 +278,7 @@ export class ProblemsComponent implements OnInit {
     });
 
     this.loadFilterMetadata();
-    this.loadProblems();
+    this.loadUserBookmarksAndProblems();
   }
 
   onSearchInput(value: string): void {
@@ -319,6 +324,20 @@ export class ProblemsComponent implements OnInit {
     });
   }
 
+  private loadUserBookmarksAndProblems(): void {
+    if (this.authService.isLoggedIn()) {
+      this.bookmarkService.getUserBookmarks().subscribe({
+        next: (bookmarks) => {
+          this.bookmarkedIds = new Set(bookmarks.map(b => b.id));
+          this.loadProblems();
+        },
+        error: () => this.loadProblems()
+      });
+    } else {
+      this.loadProblems();
+    }
+  }
+
   loadProblems(): void {
     this.loading = true;
     this.error = null;
@@ -340,7 +359,10 @@ export class ProblemsComponent implements OnInit {
 
     this.problemService.getProblems(filterParams).subscribe({
       next: (res) => {
-        this.problems = res.content;
+        this.problems = res.content.map(p => ({
+          ...p,
+          bookmarked: this.bookmarkedIds.has(p.id)
+        }));
         this.totalElements = res.totalElements;
         this.totalPages = res.totalPages;
         this.loading = false;
@@ -361,6 +383,25 @@ export class ProblemsComponent implements OnInit {
   }
 
   toggleBookmark(problem: Problem): void {
-    problem.bookmarked = !problem.bookmarked;
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/problems' } });
+      return;
+    }
+
+    if (problem.bookmarked) {
+      this.bookmarkService.removeBookmark(problem.id).subscribe({
+        next: () => {
+          problem.bookmarked = false;
+          this.bookmarkedIds.delete(problem.id);
+        }
+      });
+    } else {
+      this.bookmarkService.addBookmark(problem.id).subscribe({
+        next: () => {
+          problem.bookmarked = true;
+          this.bookmarkedIds.add(problem.id);
+        }
+      });
+    }
   }
 }

@@ -39,6 +39,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/problems/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/technologies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tags/**").permitAll()
+                        // Bookmark endpoints for any authenticated user
+                        .requestMatchers(HttpMethod.POST, "/api/problems/*/bookmark").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/problems/*/bookmark").authenticated()
+                        .requestMatchers("/api/users/me/**").authenticated()
                         // Admin management endpoints
                         .requestMatchers(HttpMethod.POST, "/api/technologies/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/technologies/**").hasRole("ADMIN")
@@ -51,7 +55,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Authenticated endpoints
                         .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/users/me/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
