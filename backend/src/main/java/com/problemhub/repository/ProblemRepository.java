@@ -69,33 +69,107 @@ public class ProblemRepository {
     }
 
     public List<Problem> findAll(int offset, int limit, String sortBy, String sortDir) {
-        // Sanitize sort parameters to prevent SQL injection
+        return findWithFilters(null, null, null, null, null, null, null, offset, limit, sortBy, sortDir);
+    }
+
+    public long countAll() {
+        return countWithFilters(null, null, null, null, null, null, null);
+    }
+
+    public List<Problem> findWithFilters(String keyword, String domain, String difficulty,
+                                         String projectType, String technology, String tag,
+                                         String status, int offset, int limit,
+                                         String sortBy, String sortDir) {
+        StringBuilder whereClause = new StringBuilder(" WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+
+        buildFilterConditions(whereClause, params, keyword, domain, difficulty, projectType, technology, tag, status);
+
         String validSortBy = switch (sortBy != null ? sortBy.toLowerCase() : "created_at") {
-            case "title" -> "title";
-            case "domain" -> "domain";
-            case "difficulty" -> "difficulty";
-            case "project_type", "projecttype" -> "project_type";
-            case "status" -> "status";
-            default -> "created_at";
+            case "title" -> "p.title";
+            case "domain" -> "p.domain";
+            case "difficulty" -> "p.difficulty";
+            case "project_type", "projecttype" -> "p.project_type";
+            case "status" -> "p.status";
+            default -> "p.created_at";
         };
         String validSortDir = "ASC".equalsIgnoreCase(sortDir) ? "ASC" : "DESC";
 
         String sql = String.format("""
-            SELECT id, title, description, domain, difficulty, project_type,
-                   impact, solution_direction, expected_outcome, status,
-                   created_by, created_at, updated_at
-            FROM problems
+            SELECT DISTINCT p.id, p.title, p.description, p.domain, p.difficulty, p.project_type,
+                   p.impact, p.solution_direction, p.expected_outcome, p.status,
+                   p.created_by, p.created_at, p.updated_at
+            FROM problems p
+            %s
             ORDER BY %s %s
             LIMIT ? OFFSET ?
-        """, validSortBy, validSortDir);
+        """, whereClause, validSortBy, validSortDir);
 
-        return jdbcTemplate.query(sql, rowMapper, limit, offset);
+        params.add(limit);
+        params.add(offset);
+
+        return jdbcTemplate.query(sql, rowMapper, params.toArray());
     }
 
-    public long countAll() {
-        String sql = "SELECT COUNT(*) FROM problems";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+    public long countWithFilters(String keyword, String domain, String difficulty,
+                                 String projectType, String technology, String tag,
+                                 String status) {
+        StringBuilder whereClause = new StringBuilder(" WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+
+        buildFilterConditions(whereClause, params, keyword, domain, difficulty, projectType, technology, tag, status);
+
+        String sql = "SELECT COUNT(DISTINCT p.id) FROM problems p " + whereClause;
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, params.toArray());
         return count != null ? count : 0;
+    }
+
+    private void buildFilterConditions(StringBuilder where, List<Object> params,
+                                       String keyword, String domain, String difficulty,
+                                       String projectType, String technology, String tag,
+                                       String status) {
+        if (keyword != null && !keyword.trim().isBlank()) {
+            where.append(" AND (LOWER(p.title) LIKE ? OR LOWER(p.description) LIKE ?) ");
+            String kw = "%" + keyword.trim().toLowerCase() + "%";
+            params.add(kw);
+            params.add(kw);
+        }
+        if (domain != null && !domain.trim().isBlank()) {
+            where.append(" AND LOWER(p.domain) = LOWER(?) ");
+            params.add(domain.trim());
+        }
+        if (difficulty != null && !difficulty.trim().isBlank()) {
+            where.append(" AND UPPER(p.difficulty) = UPPER(?) ");
+            params.add(difficulty.trim());
+        }
+        if (projectType != null && !projectType.trim().isBlank()) {
+            where.append(" AND UPPER(p.project_type) = UPPER(?) ");
+            params.add(projectType.trim());
+        }
+        if (status != null && !status.trim().isBlank()) {
+            where.append(" AND UPPER(p.status) = UPPER(?) ");
+            params.add(status.trim());
+        }
+        if (technology != null && !technology.trim().isBlank()) {
+            where.append("""
+                 AND EXISTS (
+                    SELECT 1 FROM problem_technologies pt
+                    JOIN technologies t ON pt.technology_id = t.id
+                    WHERE pt.problem_id = p.id AND LOWER(t.name) = LOWER(?)
+                )
+            """);
+            params.add(technology.trim());
+        }
+        if (tag != null && !tag.trim().isBlank()) {
+            where.append("""
+                 AND EXISTS (
+                    SELECT 1 FROM problem_tags ptags
+                    JOIN tags tg ON ptags.tag_id = tg.id
+                    WHERE ptags.problem_id = p.id AND LOWER(tg.name) = LOWER(?)
+                )
+            """);
+            params.add(tag.trim());
+        }
     }
 
     public Problem save(Problem problem) {

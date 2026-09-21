@@ -23,12 +23,37 @@ public class ProblemController {
 
     @GetMapping
     public ResponseEntity<PageResponse<ProblemResponse>> getAllProblems(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String domain,
+            @RequestParam(required = false) String difficulty,
+            @RequestParam(required = false) String projectType,
+            @RequestParam(required = false) String technology,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir
     ) {
-        PageResponse<ProblemResponse> response = problemService.getAllProblems(page, size, sortBy, sortDir);
+        PageResponse<ProblemResponse> response = problemService.getAllProblems(
+                keyword, domain, difficulty, projectType, technology, tag, status,
+                page, size, sortBy, sortDir
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<ProblemResponse>> searchProblems(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir
+    ) {
+        PageResponse<ProblemResponse> response = problemService.getAllProblems(
+                keyword, null, null, null, null, null, null,
+                page, size, sortBy, sortDir
+        );
         return ResponseEntity.ok(response);
     }
 

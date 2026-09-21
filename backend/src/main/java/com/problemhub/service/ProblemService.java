@@ -35,13 +35,22 @@ public class ProblemService {
         this.tagRepository = tagRepository;
     }
 
-    public PageResponse<ProblemResponse> getAllProblems(int page, int size, String sortBy, String sortDir) {
+    public PageResponse<ProblemResponse> getAllProblems(
+            String keyword, String domain, String difficulty,
+            String projectType, String technology, String tag,
+            String status, int page, int size, String sortBy, String sortDir
+    ) {
         int validatedPage = Math.max(0, page);
         int validatedSize = (size > 0 && size <= 100) ? size : 10;
         int offset = validatedPage * validatedSize;
 
-        List<Problem> problems = problemRepository.findAll(offset, validatedSize, sortBy, sortDir);
-        long total = problemRepository.countAll();
+        List<Problem> problems = problemRepository.findWithFilters(
+                keyword, domain, difficulty, projectType, technology, tag, status,
+                offset, validatedSize, sortBy, sortDir
+        );
+        long total = problemRepository.countWithFilters(
+                keyword, domain, difficulty, projectType, technology, tag, status
+        );
 
         if (problems.isEmpty()) {
             return new PageResponse<>(Collections.emptyList(), validatedPage, validatedSize, total);
