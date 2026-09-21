@@ -62,6 +62,7 @@ class ProblemControllerIntegrationTest {
     }
 
     @Test
+    @org.springframework.security.test.context.support.WithMockUser(username = "admin@problemhub.com", roles = {"ADMIN"})
     @DisplayName("POST, PUT, and DELETE /api/problems CRUD lifecycle")
     void testProblemCrudLifecycle() throws Exception {
         // 1. Create a new problem
@@ -110,6 +111,7 @@ class ProblemControllerIntegrationTest {
     }
 
     @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     @DisplayName("POST /api/problems with invalid payload should return 400 Bad Request")
     void testCreateProblemValidationFailure() throws Exception {
         ProblemRequest invalidRequest = new ProblemRequest();

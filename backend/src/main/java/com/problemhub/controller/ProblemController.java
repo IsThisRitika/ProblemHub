@@ -64,9 +64,12 @@ public class ProblemController {
     }
 
     @PostMapping
-    public ResponseEntity<ProblemResponse> createProblem(@Valid @RequestBody ProblemRequest request) {
-        // In Phase 3, default to user 1 (Admin) until auth context is integrated in Phase 7
-        ProblemResponse created = problemService.createProblem(request, 1L);
+    public ResponseEntity<ProblemResponse> createProblem(
+            @Valid @RequestBody ProblemRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.problemhub.security.ProblemUserPrincipal principal
+    ) {
+        Long creatorId = (principal != null && principal.getUserId() != null) ? principal.getUserId() : 1L;
+        ProblemResponse created = problemService.createProblem(request, creatorId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
