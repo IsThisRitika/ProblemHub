@@ -1,0 +1,52 @@
+<div class="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Brand / Logo -->
+      <div class="flex items-center gap-8">
+        <a routerLink="/" class="flex items-center gap-2 font-bold text-lg text-slate-900 tracking-tight">
+          <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-black shadow-xs">
+            PH
+          </span>
+          <span>Problem <span class="text-indigo-600">Hub</span></span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+          <a routerLink="/problems" routerLinkActive="bg-slate-100 text-indigo-600" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+            Browse Problems
+          </a>
+          <a routerLink="/bookmarks" routerLinkActive="bg-slate-100 text-indigo-600" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+            Shortlist
+          </a>
+        </nav>
+      </div>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-3 text-sm">
+        <a routerLink="/admin" routerLinkActive="text-indigo-600 font-semibold" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded border border-slate-200">
+          Admin Portal
+        </a>
+        <a routerLink="/auth/login" class="text-slate-600 hover:text-slate-900 font-medium px-3 py-1.5">
+          Sign In
+        </a>
+        <a routerLink="/auth/register" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3.5 py-1.5 rounded-md shadow-xs transition-colors">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Area -->
+  <main class="flex-1">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Minimal Footer -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p><span class="font-semibold text-slate-700">Problem Hub</span> — Discover · Understand · Filter · Shortlist · Build</p>
+      <p class="text-slate-400">Java Full-Stack (Spring Boot + JDBC + MySQL + Angular)</p>
+    </div>
+  </footer>
+</div>
