@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -221,6 +221,7 @@ export class ProblemsComponent implements OnInit {
   readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   problems: Problem[] = [];
   technologies: Technology[] = [];
@@ -314,12 +315,18 @@ export class ProblemsComponent implements OnInit {
 
   loadFilterMetadata(): void {
     this.problemService.getTechnologies().subscribe({
-      next: (techs) => this.technologies = techs,
+      next: (techs) => {
+        this.technologies = techs;
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
 
     this.problemService.getTags().subscribe({
-      next: (tags) => this.tags = tags,
+      next: (tags) => {
+        this.tags = tags;
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
   }
@@ -366,10 +373,12 @@ export class ProblemsComponent implements OnInit {
         this.totalElements = res.totalElements;
         this.totalPages = res.totalPages;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message || 'Unable to connect to the Problem Hub API server.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -393,6 +402,7 @@ export class ProblemsComponent implements OnInit {
         next: () => {
           problem.bookmarked = false;
           this.bookmarkedIds.delete(problem.id);
+          this.cdr.markForCheck();
         }
       });
     } else {
@@ -400,6 +410,7 @@ export class ProblemsComponent implements OnInit {
         next: () => {
           problem.bookmarked = true;
           this.bookmarkedIds.add(problem.id);
+          this.cdr.markForCheck();
         }
       });
     }

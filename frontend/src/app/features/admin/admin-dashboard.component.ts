@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -567,6 +567,7 @@ type AdminTab = 'overview' | 'problems' | 'technologies' | 'tags';
 export class AdminDashboardComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly problemService = inject(ProblemService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   activeTab: AdminTab = 'overview';
   stats: AdminStats | null = null;
@@ -629,18 +630,27 @@ export class AdminDashboardComponent implements OnInit {
 
   loadStats(): void {
     this.adminService.getStats().subscribe({
-      next: (s) => (this.stats = s),
+      next: (s) => {
+        this.stats = s;
+        this.cdr.markForCheck();
+      },
       error: () => this.showNotification('Failed to load platform stats', 'error')
     });
   }
 
   loadTaxonomy(): void {
     this.problemService.getTechnologies().subscribe({
-      next: (techs) => (this.technologies = techs),
+      next: (techs) => {
+        this.technologies = techs;
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
     this.problemService.getTags().subscribe({
-      next: (tags) => (this.tags = tags),
+      next: (tags) => {
+        this.tags = tags;
+        this.cdr.markForCheck();
+      },
       error: () => {}
     });
   }
@@ -659,10 +669,12 @@ export class AdminDashboardComponent implements OnInit {
         this.problems = res.content;
         this.totalProblemsCount = res.totalElements;
         this.loadingProblems = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loadingProblems = false;
         this.showNotification('Failed to load problem statements', 'error');
+        this.cdr.markForCheck();
       }
     });
   }
@@ -881,9 +893,11 @@ export class AdminDashboardComponent implements OnInit {
 
   private showNotification(message: string, type: 'success' | 'error'): void {
     this.notification = { message, type };
+    this.cdr.markForCheck();
     setTimeout(() => {
       if (this.notification?.message === message) {
         this.notification = null;
+        this.cdr.markForCheck();
       }
     }, 5000);
   }

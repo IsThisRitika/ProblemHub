@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProblemService } from '../../core/services/problem.service';
@@ -161,6 +161,7 @@ export class ProblemDetailsComponent implements OnInit {
   readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   problem: Problem | null = null;
   loading = true;
@@ -174,6 +175,7 @@ export class ProblemDetailsComponent implements OnInit {
     } else {
       this.error = 'Invalid problem statement ID.';
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -185,11 +187,13 @@ export class ProblemDetailsComponent implements OnInit {
       next: (data) => {
         this.problem = data;
         this.loading = false;
+        this.cdr.markForCheck();
         this.checkBookmarkStatus(id);
       },
       error: (err) => {
         this.error = err.error?.message || 'Problem statement not found.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -200,6 +204,7 @@ export class ProblemDetailsComponent implements OnInit {
         next: (bookmarks) => {
           if (this.problem) {
             this.problem.bookmarked = bookmarks.some(b => b.id === problemId);
+            this.cdr.markForCheck();
           }
         }
       });
@@ -219,13 +224,19 @@ export class ProblemDetailsComponent implements OnInit {
     if (this.problem.bookmarked) {
       this.bookmarkService.removeBookmark(this.problem.id).subscribe({
         next: () => {
-          if (this.problem) this.problem.bookmarked = false;
+          if (this.problem) {
+            this.problem.bookmarked = false;
+            this.cdr.markForCheck();
+          }
         }
       });
     } else {
       this.bookmarkService.addBookmark(this.problem.id).subscribe({
         next: () => {
-          if (this.problem) this.problem.bookmarked = true;
+          if (this.problem) {
+            this.problem.bookmarked = true;
+            this.cdr.markForCheck();
+          }
         }
       });
     }

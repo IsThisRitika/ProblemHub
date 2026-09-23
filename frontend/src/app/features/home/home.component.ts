@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -134,6 +134,7 @@ import { ProblemCardComponent } from '../../shared/components/problem-card.compo
 export class HomeComponent implements OnInit {
   private readonly problemService = inject(ProblemService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   searchKeyword = '';
   featuredProblems: Problem[] = [];
@@ -153,9 +154,11 @@ export class HomeComponent implements OnInit {
       next: (res) => {
         this.featuredProblems = res.content.slice(0, 3);
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }

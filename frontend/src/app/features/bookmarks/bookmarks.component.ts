@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -84,6 +84,7 @@ import { ProblemCardComponent } from '../../shared/components/problem-card.compo
 })
 export class BookmarksComponent implements OnInit {
   private readonly bookmarkService = inject(BookmarkService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   bookmarks: Problem[] = [];
   filterQuery = '';
@@ -111,9 +112,11 @@ export class BookmarksComponent implements OnInit {
       next: (data) => {
         this.bookmarks = data;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -122,6 +125,7 @@ export class BookmarksComponent implements OnInit {
     this.bookmarkService.removeBookmark(problem.id).subscribe({
       next: () => {
         this.bookmarks = this.bookmarks.filter(b => b.id !== problem.id);
+        this.cdr.markForCheck();
       }
     });
   }
