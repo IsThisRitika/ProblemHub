@@ -1,3 +1,5 @@
+Based on https://github.com/mo-farooq/ProblemHub
+
 # Problem Hub
 
 Problem Hub is a Java full-stack web application designed for students and developers to discover, filter, and shortlist real-world problem statements for hackathons, mini projects, major projects, and final-year capstone portfolios.
@@ -61,3 +63,4 @@ cd frontend
 npm install
 npm start
 ```
+
